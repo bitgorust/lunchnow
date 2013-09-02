@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<project name ="LunchNow" default="zipalign" basedir=".">
+
+	<property file="build.properties" />
+	
+	<condition property="jarsigner" value="${jdk.home}/bin/jarsigner.exe" else="${jdk.home}/bin/jarsigner">  
+		<os family="windows" />
+    </condition>
+	<condition property="zipalign" value="${adt.tools}/zipalign.exe" else="${adt.tools}/zipalign">  
+        <os family="windows" />
+    </condition> 
+	
+	<property name="out-unsigned-package" value="${ant.project.name}-unsigned.apk" />  
+    <property name="out-signed-package" value="${ant.project.name}-signed.apk" />
+	<property name="out-aligned-package" value="${ant.project.name}.apk" />
+    <condition property="out-unsigned-package-ospath" value="${basedir}\${out-unsigned-package}" else="${basedir}/${out-unsigned-package}">
+        <os family="windows" />  
+    </condition>
+    <condition property="out-signed-package-ospath" value="${basedir}\${out-signed-package}" else="${basedir}/${out-signed-package}">  
+        <os family="windows" />  
+    </condition>
+	<condition property="zipalign-package-ospath" value="${basedir}\${out-aligned-package}" else="${basedir}/${out-aligned-package}">
+        <os family="windows" />  
+    </condition>
+	
+	<target name="jarsigner">
+        <exec executable="${jarsigner}" failonerror="true">  
+            <arg value="-verbose" />
+			<arg value="-digestalg" />
+			<arg value="SHA1" />
+			<arg value="-sigalg" />
+			<arg value="MD5withRSA" />
+            <arg value="-storepass" />  
+            <arg value="${password}" />  
+            <arg value="-keystore" />  
+            <arg value="baixing.keystore" />  
+            <arg value="-signedjar" />  
+            <arg value="${out-signed-package-ospath}" />  
+            <arg value="${out-unsigned-package-ospath}" />  
+            <arg value="baixing.keystore" />  
+        </exec>
+    </target>    
+    <target name="zipalign" depends ="jarsigner">
+        <exec executable="${zipalign}" failonerror="true">  
+            <arg value="-v" />
+            <arg value="4" />  
+            <arg value="${out-signed-package-ospath}" />  
+            <arg value="${zipalign-package-ospath}" />  
+        </exec>  
+    </target>  
+</project>   
