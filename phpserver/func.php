@@ -57,6 +57,35 @@
 		}
 	}
 	
+	function broadcast($message, $ttl, $topic)
+	{
+		if(empty($message) || empty($topic) || !is_int($ttl))
+			echo 'wrong parameter';
+		else
+		{
+			$fields = array('payload' => $message, 'ttl' => $ttl, 'restricted_package_name' => PACKAGE_NAME, 'topic' => $topic);
+			$headers = array('Authorization: key=' . APP_SECRET, 'Content-Type: application/x-www-form-urlencoded');
+			
+			// Open connection
+			$ch = curl_init();
+
+			// Set the url, number of POST vars, POST data
+			curl_setopt($ch, CURLOPT_URL, PUSH_URL);
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+			
+			// Execute post
+			$result = curl_exec($ch);
+			
+			// Close connection
+			curl_close($ch);
+			echo $result;
+		}
+	}
+	
 	function joining($receiver, $promoter)
     {
 		$con = DataConnection::getConnection();

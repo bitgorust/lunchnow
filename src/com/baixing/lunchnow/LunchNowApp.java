@@ -1,19 +1,28 @@
 package com.baixing.lunchnow;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Application;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
@@ -49,8 +58,9 @@ public class LunchNowApp extends Application {
 		ownUDID = Installation.id(getApplicationContext());
 		Log.d("LunchNowApp", "ownUDID: " + ownUDID);
 		mAccountName = getUserAccount();
-		mPromoterID = getPromoter();
-		Log.d("LunchNowApp", "promoter: " + mPromoterID);
+		//mPromoterID = getPromoter();
+		mPromoterID = getPromoterByBluetooth();
+		Log.d("LunchNowApp", "Bluetooth: " + mPromoterID);
 		
 		init();
 	}
@@ -70,6 +80,44 @@ public class LunchNowApp extends Application {
 			return new String(buffer, 0, length);
 		} catch (IOException e) {
 			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	private String getPromoterByBluetooth() {
+		File[] bluetooth = Environment.getExternalStorageDirectory().listFiles(new FileFilter() {
+			
+			@Override
+			public boolean accept(File pathname) {
+				return pathname.isDirectory() && pathname.getName().equalsIgnoreCase("bluetooth");
+			}
+		});
+		if (bluetooth.length > 0) {
+			File[] files = bluetooth[0].listFiles(new FilenameFilter() {
+				
+				@Override
+				public boolean accept(File dir, String filename) {
+					return filename.startsWith("LunchNow-") && filename.endsWith(".apk");
+				}
+			});
+			if (files.length > 0) {
+				if (files.length > 1) {
+					Arrays.sort(files, new Comparator<File>() {
+
+						@Override
+						public int compare(File lhs, File rhs) {
+							return (int)(rhs.lastModified() - lhs.lastModified());
+						}
+						
+					});
+				}
+				return files[0].getName().substring("LunchNow-".length(), "LunchNow-".length() + Installation.id(this).length());
+			} else {
+				Log.e(TAG, "No apk found");
+				return null;
+			}
+		} else {
+			Log.e(TAG, "No Bluetooth Dir");
 			return null;
 		}
 	}
@@ -174,6 +222,7 @@ public class LunchNowApp extends Application {
 			if (resultCode == ErrorCode.SUCCESS) {
 				Log.d("LunchNowApp", ownUDID);
 				MiPushClient.setAlias(getApplicationContext(), ownUDID, null);
+				MiPushClient.subscribe(getApplicationContext(), "SyncData", null);
 			} else {
 				Log.d(TAG, reason);
 			}
